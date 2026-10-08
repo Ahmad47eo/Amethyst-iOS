@@ -146,7 +146,7 @@
     [self.options addObject:(id)[LauncherMenuCustomItem
                                  title:@"Import Local File"
                                  imageName:@"square.and.arrow.down" action:^{
-        UIDocumentPickerViewController *picker = [[UIDocumentPickerViewController alloc] initForOpeningContentTypes:@[UTType.item] asCopy:YES];
+        UIDocumentPickerViewController *picker = [[UIDocumentPickerViewController alloc] initForOpeningContentTypes:@[[UTType typeWithIdentifier:@"public.item"]] asCopy:YES];
         picker.delegate = self;
         picker.allowsMultipleSelection = YES;
         picker.modalPresentationStyle = UIModalPresentationFormSheet;
