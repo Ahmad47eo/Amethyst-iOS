@@ -14,6 +14,7 @@
 #import "UIKit+hook.h"
 #import "ios_uikit_bridge.h"
 #import "utils.h"
+#import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
 
 #include <dlfcn.h>
 
@@ -46,6 +47,34 @@
 @end
 
 @implementation LauncherMenuViewController
+
+- (void)documentPicker:(UIDocumentPickerViewController *)controller didPickDocumentsAtURLs:(NSArray<NSURL *> *)urls {
+    if (urls.count == 0) return;
+    NSString *home = @(getenv("AME_HOME") ?: "");
+    NSString *importDir = [home stringByAppendingPathComponent:@"imports"];
+    [[NSFileManager defaultManager] createDirectoryAtPath:importDir withIntermediateDirectories:YES attributes:nil error:nil];
+    NSUInteger imported = 0;
+    for (NSURL *url in urls) {
+        NSString *name = url.lastPathComponent.length ? url.lastPathComponent : @"imported-file";
+        NSString *dest = [importDir stringByAppendingPathComponent:name];
+        if ([[NSFileManager defaultManager] fileExistsAtPath:dest]) {
+            NSString *base = [name stringByDeletingPathExtension];
+            NSString *ext = name.pathExtension;
+            name = [NSString stringWithFormat:@"%@-%lld%@%@", base, (long long)NSDate.date.timeIntervalSince1970, ext.length ? @"." : @"", ext];
+            dest = [importDir stringByAppendingPathComponent:name];
+        }
+        NSError *error = nil;
+        if ([[NSFileManager defaultManager] copyItemAtURL:url toURL:[NSURL fileURLWithPath:dest] error:&error]) {
+            imported++;
+        } else {
+            NSLog(@"[Importer] Could not import %@: %@", url, error);
+        }
+    }
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"Import Complete" message:[NSString stringWithFormat:@"%lu local file(s) copied to the Amethyst imports folder.", (unsigned long)imported] preferredStyle:UIAlertControllerStyleAlert];
+    [alert addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:nil]];
+    [self presentViewController:alert animated:YES completion:nil];
+}
+
 
 #define contentNavigationController ((LauncherNavigationController *)self.splitViewController.viewControllers[1])
 
@@ -113,7 +142,35 @@
         }]];
     }
     
-    // Built-in diagnostics: useful when a game, renderer, Java runtime, or JIT setup fails.\n    [self.options addObject:(id)[LauncherMenuCustomItem\n                                 title:@"Launcher Diagnostics"\n                                 imageName:@"stethoscope" action:^{\n        NSProcessInfo *process = NSProcessInfo.processInfo;\n        NSString *jit = isJITEnabled(false) ? @"Enabled" : @"Not enabled";\n        NSString *task = getEntitlementValue(@"get-task-allow") ? @"Yes" : @"No";\n        NSString *renderer = @(getenv("RENDERER") ?: "auto");\n        NSString *gameDir = @(getenv("GAME_DIR") ?: "(not set)");\n        NSString *home = @(getenv("AME_HOME") ?: "(not set)");\n        NSString *memory = [NSByteCountFormatter stringFromByteCount:(long long)process.physicalMemory countStyle:NSByteCountFormatterCountStyleMemory];\n        NSString *message = [NSString stringWithFormat:@"iOS: %@\\nDevice: %@\\nPhysical RAM: %@\\nJIT: %@\\nDebug entitlement: %@\\nRenderer: %@\\nGame directory: %@\\nAmethyst home: %@", UIDevice.currentDevice.systemVersion, UIDevice.currentDevice.model, memory, jit, task, renderer, gameDir, home];\n        UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"Launcher Diagnostics" message:message preferredStyle:UIAlertControllerStyleAlert];\n        [alert addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:nil]];\n        [self presentViewController:alert animated:YES completion:nil];\n    }]];\n\n    self.tableView.separatorStyle = UITableViewCellSeparatorStyleNone;
+    // Local-file importer. It only imports files the user already has on-device; it does not download Minecraft files.
+    [self.options addObject:(id)[LauncherMenuCustomItem
+                                 title:@"Import Local File"
+                                 imageName:@"square.and.arrow.down" action:^{
+        UIDocumentPickerViewController *picker = [[UIDocumentPickerViewController alloc] initForOpeningContentTypes:@[UTType.item] asCopy:YES];
+        picker.delegate = self;
+        picker.allowsMultipleSelection = YES;
+        picker.modalPresentationStyle = UIModalPresentationFormSheet;
+        [self presentViewController:picker animated:YES completion:nil];
+    }]];
+
+    // Built-in diagnostics: useful when a game, renderer, Java runtime, or JIT setup fails.
+    [self.options addObject:(id)[LauncherMenuCustomItem
+                                 title:@"Launcher Diagnostics"
+                                 imageName:@"stethoscope" action:^{
+        NSProcessInfo *process = NSProcessInfo.processInfo;
+        NSString *jit = isJITEnabled(false) ? @"Enabled" : @"Not enabled";
+        NSString *task = getEntitlementValue(@"get-task-allow") ? @"Yes" : @"No";
+        NSString *renderer = @(getenv("RENDERER") ?: "auto");
+        NSString *gameDir = @(getenv("GAME_DIR") ?: "(not set)");
+        NSString *home = @(getenv("AME_HOME") ?: "(not set)");
+        NSString *memory = [NSByteCountFormatter stringFromByteCount:(long long)process.physicalMemory countStyle:NSByteCountFormatterCountStyleMemory];
+        NSString *message = [NSString stringWithFormat:@"iOS: %@\nDevice: %@\nPhysical RAM: %@\nJIT: %@\nDebug entitlement: %@\nRenderer: %@\nGame directory: %@\nAmethyst home: %@", UIDevice.currentDevice.systemVersion, UIDevice.currentDevice.model, memory, jit, task, renderer, gameDir, home];
+        UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"Launcher Diagnostics" message:message preferredStyle:UIAlertControllerStyleAlert];
+        [alert addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:nil]];
+        [self presentViewController:alert animated:YES completion:nil];
+    }]];
+
+    self.tableView.separatorStyle = UITableViewCellSeparatorStyleNone;
     
     self.navigationController.toolbarHidden = NO;
     UIActivityIndicatorViewStyle indicatorStyle = UIActivityIndicatorViewStyleMedium;
