@@ -1,6 +1,7 @@
 #import "PickTextField.h"
 #import "UIKit+hook.h"
 #import "utils.h"
+#include <dlfcn.h>
 
 @interface PickViewController : UIViewController
 @property(nonatomic, assign) UITextField *textField;
@@ -51,7 +52,7 @@
 }
 
 - (BOOL)prefersPopoverPresentation {
-    BOOL hasLiquidGlass = _UISolariumEnabled && _UISolariumEnabled();
+    BOOL hasLiquidGlass = AmethystIsLiquidGlassEnabled();
     return hasLiquidGlass || NSProcessInfo.processInfo.isMacCatalystApp;
 }
 
