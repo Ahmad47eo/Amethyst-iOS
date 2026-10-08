@@ -236,3 +236,14 @@ void init_hookUIKitConstructor(void) {
 UIViewController* currentVC() {
     return UIWindow.mainWindow.visibleViewController;
 }
+
+
+BOOL AmethystIsLiquidGlassEnabled(void) {
+    typedef BOOL (*SolariumEnabledFn)(void);
+    static SolariumEnabledFn fn = NULL;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        fn = (SolariumEnabledFn)dlsym(RTLD_DEFAULT, "_UISolariumEnabled");
+    });
+    return fn != NULL && fn();
+}
