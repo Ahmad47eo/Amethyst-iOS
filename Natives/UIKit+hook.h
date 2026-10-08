@@ -1,4 +1,6 @@
 #import <UIKit/UIKit.h>
+#include <dlfcn.h>
+#include <dispatch/dispatch.h>
 
 #define realUIIdiom UIDevice.currentDevice.userInterfaceIdiom
 extern NSNotificationName UIPresentationControllerPresentationTransitionWillBeginNotification;
@@ -20,7 +22,7 @@ extern NSNotificationName UIPresentationControllerPresentationTransitionWillBegi
 @end
 
 // private functions
-extern BOOL _UISolariumEnabled(void) __attribute__((weak_import));
+BOOL AmethystIsLiquidGlassEnabled(void);
 
 @interface UIBarButtonItem(private)
 - (UIView *)view;
