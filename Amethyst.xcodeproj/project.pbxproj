@@ -55,7 +55,7 @@
 			);
 			name = "Angel Aura Amethyst";
 			passBuildSettingsInEnvironment = 1;
-			productName = PojavLauncher;
+			productName = Amethyst;
 		};
 /* End PBXLegacyTarget section */
 
