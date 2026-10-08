@@ -79,7 +79,8 @@ jobs:
       - name: Install ldid
         run: |
           brew install ldid
-          ldid -V
+          command -v ldid
+          ldid -h || true
 
       - name: Set up JDK 8
         uses: actions/setup-java@v6
