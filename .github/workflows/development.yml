@@ -86,6 +86,9 @@ jobs:
       - name: Build for ${{ matrix.platform_name }}
         run: |
           export PATH=/opt/homebrew/bin:$PATH
+          export BOOTJDK="$JAVA_HOME/bin"
+          echo "Using JDK: $BOOTJDK"
+          "$BOOTJDK/javac" -version
           export SLIMMED=1
           if [ "${{ matrix.platform_name }}" == "ios" ]; then
             gmake -j$(sysctl -n hw.ncpu) dsym package PLATFORM=${{ matrix.platform }}
