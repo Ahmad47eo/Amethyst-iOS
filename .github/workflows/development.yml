@@ -18,18 +18,10 @@ jobs:
         include:
           - platform: 2
             platform_name: ios
-    
-    runs-on: J316sAP
+
+    # GitHub-hosted Intel macOS runner; avoids the unavailable J316sAP self-hosted runner.
+    runs-on: macos-15-intel
     steps:
-      - name: Remove work folders
-        run: |
-          echo "before"
-          ls -lah ./
-          rm -rf ./* || true
-          rm -rf ./.??* || true
-          echo "after"
-          ls -lah ./
-          
       - name: Checkout repository
         uses: actions/checkout@main
 
@@ -70,7 +62,7 @@ jobs:
             -DCMAKE_C_FLAGS=-Wno-error=implicit-function-declaration
           cmake --build build --config RelWithDebInfo --target GL
           cp -R lib/libGL.dylib ../Natives/resources/Frameworks/libgl4es_114.dylib
-          
+
       - name: Push gl4es
         if: false && github.event != 'pull_request' && github.ref_name == 'main' && steps.gl4es-cache.outputs.cache-hit != 'true'
         continue-on-error: true
@@ -84,14 +76,11 @@ jobs:
           export PATH=/opt/homebrew/bin:$PATH
           export SLIMMED=1
           if [ "${{ matrix.platform_name }}" == "ios" ]; then
-            # Build ipa and tipa for iOS
             gmake -j$(sysctl -n hw.ncpu) dsym package PLATFORM=${{ matrix.platform }}
             gmake -j$(sysctl -n hw.ncpu) dsym package PLATFORM=${{ matrix.platform }} TROLLSTORE_JIT_ENT=1
           elif [ "${{ matrix.platform_name }}" == "tvos" ]; then
-            # Build tipa only for tvOS
             gmake -j$(sysctl -n hw.ncpu) dsym package PLATFORM=${{ matrix.platform }} TROLLSTORE_JIT_ENT=1
           else
-            # Build ipa only for everything else
             gmake -j$(sysctl -n hw.ncpu) dsym package PLATFORM=${{ matrix.platform }}
           fi
 
@@ -121,7 +110,6 @@ jobs:
 
       - name: Upload PojavLauncher.dSYM
         uses: actions/upload-artifact@main
-        if: matrix.platform_name == 'ios'
         with:
           name: AngelAuraAmethyst.dSYM
           path: artifacts/AngelAuraAmethyst.dSYM
